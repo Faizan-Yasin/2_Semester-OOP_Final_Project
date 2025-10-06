@@ -1,0 +1,498 @@
+package Project;
+
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        IAttendanceManager am = new AttendanceManager(); 
+        Scanner input = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("\n\t: Student Attendance Management System :");
+            System.out.println("1. Add Student");
+            System.out.println("2. Mark Attendance");
+            System.out.println("3. View Attendance");
+            System.out.println("4. Remove Student");
+            System.out.println("5. Update Student Details");
+            System.out.println("6. Update Attendance");
+            System.out.println("7. View Students");
+            System.out.println("8. Update Section");
+            System.out.println("9. Update Date");
+            System.out.println("10. Exit");
+            System.out.println("11. Search File.");
+            System.out.print("Enter choice: ");
+            choice = input.nextInt();
+
+            switch (choice) {
+                case 1: am.addStudent(); break;
+                case 2: am.markAttendance(); break;
+                case 3: am.viewAttendance(); break;
+                case 4: am.removeStudent(); break;
+                case 5: am.updateStudentDetails(); break;
+                case 6: am.updateAttendance(); break;
+                case 7: am.viewStudents(); break;
+                case 8: am.updateSection(); break;
+                case 9: am.updateDate(); break;
+                case 10:
+                    am.saveToFile();
+                    am.saveToReadableFile();
+                    System.out.println("Goodbye!");
+                    break;
+                case 11:
+                    am.displayFullFile();
+                    break;
+                default:
+                    System.out.println("Invalid Choice.");
+            }
+        } while (choice != 10);
+    }
+}
+
+
+package Project;
+public class Student {
+    private String name;
+    private int arid;
+    private int section;
+    private char attendance = 'N';
+    private int presentCount = 0;
+    private int absentCount = 0;
+    private int day = 0, month = 0, year = 0;
+
+    public Student(String name, int arid, int section) {
+        this.name = name;
+        this.arid = arid;
+        this.section = section;
+    }
+
+  
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public int getArid() { return arid; }
+    public void setArid(int arid) { this.arid = arid; }
+
+    public int getSection() { return section; }
+    public void setSection(int section) { this.section = section; }
+
+    public char getAttendance() { return attendance; }
+    public void setAttendance(char attendance) { this.attendance = attendance; }
+
+    public int getPresentCount() { return presentCount; }
+    public void incrementPresent() { this.presentCount++; }
+    public void decrementPresent() { this.presentCount--; }
+
+    public int getAbsentCount() { return absentCount; }
+    public void incrementAbsent() { this.absentCount++; }
+    public void decrementAbsent() { this.absentCount--; }
+
+    public int getDay() { return day; }
+    public void setDay(int day) { this.day = day; }
+
+    public int getMonth() { return month; }
+    public void setMonth(int month) { this.month = month; }
+
+    public int getYear() { return year; }
+    public void setYear(int year) { this.year = year; }
+}
+
+
+package Project;
+
+public interface IAttendanceManager {
+    void addStudent();
+    void markAttendance();
+    void viewAttendance();
+    void removeStudent();
+    void updateStudentDetails();
+    void updateAttendance();
+    void viewStudents();
+    void updateSection();
+    void updateDate();
+    void saveToFile();
+    void saveToReadableFile();
+    void displayFullFile();
+}
+
+
+
+package Project;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Scanner;
+
+public class BaseManager {
+    public void printFileContents(String filePath) {
+        try {
+            FileReader reader = new FileReader(filePath);
+            Scanner input = new Scanner(reader);
+            while (input.hasNextLine()) {
+                System.out.println(input.nextLine());
+            }
+            input.close();
+        } catch (IOException e) {
+            System.out.println("Error reading file: " + e.getMessage());
+        }
+    }
+
+    public void loadFromFile() {
+        System.out.println("BaseManager: loadFromFile can be overridden.");
+    }
+}
+
+
+package Project;
+
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
+
+public class AttendanceManager extends BaseManager implements IAttendanceManager {
+    private Student[] students = new Student[500];
+    private int[] sections = new int[10];
+    private int totalStudents = 0;
+    private Scanner input = new Scanner(System.in);
+
+    public AttendanceManager() {
+        loadFromFile();
+    }
+
+    @Override
+    public void addStudent() {
+        if (totalStudents >= 500) {
+            System.out.println("Student limit reached.");
+            return;
+        }
+
+        System.out.print("Enter Student Name: ");
+        String name = input.next();
+
+        int arid;
+        while (true) {
+            System.out.print("Enter Student ARID Number: ");
+            arid = input.nextInt();
+            boolean exists = false;
+            for (int i = 0; i < totalStudents; i++) {
+                if (students[i].getArid() == arid) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (exists) System.out.println("ARID already exists. Try another.");
+            else break;
+        }
+
+        int section;
+        while (true) {
+            System.out.print("Enter Section (1-10): ");
+            section = input.nextInt();
+            if (section < 1 || section > 10 || sections[section - 1] >= 50) {
+                System.out.println("Invalid or full section.");
+            } else break;
+        }
+
+        students[totalStudents++] = new Student(name, arid, section);
+        sections[section - 1]++;
+        System.out.println("Student added successfully.");
+    }
+
+    @Override
+    public void markAttendance() {
+        if (totalStudents == 0) {
+            System.out.println("No students to mark attendance.");
+            return;
+        }
+
+        int day, month, year;
+        while (true) {
+            System.out.print("Enter Date (DD MM YYYY): ");
+            day = input.nextInt();
+            month = input.nextInt();
+            year = input.nextInt();
+            if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100)
+                System.out.println("Invalid date.");
+            else break;
+        }
+
+        if (students[0].getDay() == day && students[0].getMonth() == month && students[0].getYear() == year) {
+            System.out.println("Attendance already marked for today.");
+            return;
+        }
+
+        for (int i = 0; i < totalStudents; i++) {
+            System.out.print("ARID " + students[i].getArid() + " (" + students[i].getName() + ") (P/A): ");
+            char att = input.next().charAt(0);
+            students[i].setAttendance(att);
+            students[i].setDay(day);
+            students[i].setMonth(month);
+            students[i].setYear(year);
+            if (att == 'P' || att == 'p') students[i].incrementPresent();
+            else students[i].incrementAbsent();
+        }
+        System.out.println("Attendance marked.");
+    }
+
+    @Override
+    public void viewAttendance() {
+        if (totalStudents == 0) {
+            System.out.println("No students available.");
+            return;
+        }
+
+        if (students[0].getDay() == 0) {
+            System.out.println("Please mark attendance first.");
+            return;
+        }
+
+        System.out.print("Press A for all or O for one: ");
+        char ch = input.next().charAt(0);
+        if (ch == 'A' || ch == 'a') {
+            for (int i = 0; i < totalStudents; i++) {
+                Student s = students[i];
+                System.out.println("ARID: " + s.getArid() + " | Name: " + s.getName() + " | Section: " + s.getSection() +
+                        " | Present: " + s.getPresentCount() + " | Absent: " + s.getAbsentCount() +
+                        " | Last Date: " + s.getDay() + "/" + s.getMonth() + "/" + s.getYear());
+            }
+        } else if (ch == 'O' || ch == 'o') {
+            System.out.print("Enter ARID: ");
+            int arid = input.nextInt();
+            for (int i = 0; i < totalStudents; i++) {
+                if (students[i].getArid() == arid) {
+                    Student s = students[i];
+                    System.out.println("ARID: " + s.getArid() + " | Name: " + s.getName() + " | Section: " + s.getSection() +
+                            " | Present: " + s.getPresentCount() + " | Absent: " + s.getAbsentCount() +
+                            " | Last Date: " + s.getDay() + "/" + s.getMonth() + "/" + s.getYear());
+                    return;
+                }
+            }
+            System.out.println("Student not found.");
+        }
+    }
+    @Override
+    public void removeStudent() {
+        if (totalStudents == 0) {
+            System.out.println("No students available.");
+            return;
+        }
+
+        System.out.print("Enter ARID to remove: ");
+        int arid = input.nextInt();
+        for (int i = 0; i < totalStudents; i++) {
+            if (students[i].getArid() == arid) {
+                sections[students[i].getSection() - 1]--;
+                for (int j = i; j < totalStudents - 1; j++) {
+                    students[j] = students[j + 1];
+                }
+                totalStudents--;
+                System.out.println("Student removed.");
+                return;
+            }
+        }
+        System.out.println("Student not found.");
+    }
+
+    @Override
+    public void updateStudentDetails() {
+        if (totalStudents == 0) {
+            System.out.println("No students available.");
+            return;
+        }
+
+        System.out.print("Enter ARID to update: ");
+        int arid = input.nextInt();
+        for (int i = 0; i < totalStudents; i++) {
+            if (students[i].getArid() == arid) {
+                System.out.print("New Name: ");
+                students[i].setName(input.next());
+
+                System.out.print("New ARID: ");
+                students[i].setArid(input.nextInt());
+
+                System.out.print("New Section (1-10): ");
+                int newSec = input.nextInt();
+                if (newSec < 1 || newSec > 10 || sections[newSec - 1] >= 50) {
+                    System.out.println("Invalid or full section.");
+                } else {
+                    sections[students[i].getSection() - 1]--;
+                    students[i].setSection(newSec);
+                    sections[newSec - 1]++;
+                }
+                System.out.println("Student details updated.");
+                return;
+            }
+        }
+        System.out.println("Student not found.");
+    }
+
+    @Override
+    public void updateAttendance() {
+        if (totalStudents == 0 || students[0].getDay() == 0) {
+            System.out.println("No attendance data to update.");
+            return;
+        }
+
+        System.out.print("Enter ARID to update attendance: ");
+        int arid = input.nextInt();
+        for (int i = 0; i < totalStudents; i++) {
+            if (students[i].getArid() == arid) {
+                char old = students[i].getAttendance();
+                if (old == 'P' || old == 'p') students[i].decrementPresent();
+                else if (old == 'A' || old == 'a') students[i].decrementAbsent();
+
+                System.out.print("New Attendance (P/A): ");
+                char newAtt = input.next().charAt(0);
+                students[i].setAttendance(newAtt);
+                if (newAtt == 'P' || newAtt == 'p') students[i].incrementPresent();
+                else if (newAtt == 'A' || newAtt == 'a') students[i].incrementAbsent();
+
+                System.out.println("Attendance updated.");
+                return;
+            }
+        }
+        System.out.println("Student not found.");
+    }
+
+    @Override
+    public void viewStudents() {
+        if (totalStudents == 0) {
+            System.out.println("No students available.");
+            return;
+        }
+
+        System.out.print("Press A for all or O for one: ");
+        char ch = input.next().charAt(0);
+        if (ch == 'A' || ch == 'a') {
+            for (int i = 0; i < totalStudents; i++) {
+                System.out.println("ARID: " + students[i].getArid() + " | Name: " + students[i].getName() + " | Section: " + students[i].getSection());
+            }
+        } else {
+            System.out.print("Enter ARID: ");
+            int arid = input.nextInt();
+            for (int i = 0; i < totalStudents; i++) {
+                if (students[i].getArid() == arid) {
+                    System.out.println("ARID: " + students[i].getArid() + " | Name: " + students[i].getName() + " | Section: " + students[i].getSection());
+                    return;
+                }
+            }
+            System.out.println("Student not found.");
+        }
+    }
+
+    @Override
+    public void updateSection() {
+        System.out.print("Enter ARID to update section: ");
+        int arid = input.nextInt();
+        for (int i = 0; i < totalStudents; i++) {
+            if (students[i].getArid() == arid) {
+                System.out.print("New Section (1-10): ");
+                int newSection = input.nextInt();
+                if (newSection < 1 || newSection > 10 || sections[newSection - 1] >= 50) {
+                    System.out.println("Invalid or full section.");
+                    return;
+                }
+                sections[students[i].getSection() - 1]--;
+                students[i].setSection(newSection);
+                sections[newSection - 1]++;
+                System.out.println("Section updated.");
+                return;
+            }
+        }
+        System.out.println("Student not found.");
+    }
+
+    @Override
+    public void updateDate() {
+        System.out.print("Enter new date (DD MM YYYY): ");
+        int day = input.nextInt();
+        int month = input.nextInt();
+        int year = input.nextInt();
+
+        for (int i = 0; i < totalStudents; i++) {
+            students[i].setDay(day);
+            students[i].setMonth(month);
+            students[i].setYear(year);
+        }
+        System.out.println("Date updated.");
+    }
+
+    @Override
+    public void saveToFile() {
+        try {
+            FileWriter writer = new FileWriter("D:\\attendance.txt");
+            for (int i = 0; i < totalStudents; i++) {
+                Student s = students[i];
+                writer.write(s.getName() + "," + s.getArid() + "," + s.getSection() + "," + s.getAttendance() + "," +
+                        s.getPresentCount() + "," + s.getAbsentCount() + "," +
+                        s.getDay() + "," + s.getMonth() + "," + s.getYear() + "\n");
+            }
+            writer.close();
+            System.out.println("Data saved to file.");
+        } catch (IOException e) {
+            System.out.println("Error saving to file: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void saveToReadableFile() {
+        try {
+            FileWriter writer = new FileWriter("D:\\attendance_readable.txt");
+            for (int i = 0; i < totalStudents; i++) {
+                Student s = students[i];
+                writer.write("ARID: " + s.getArid() + " | Name: " + s.getName() + " | Section: " + s.getSection() +
+                        " | Present: " + s.getPresentCount() + " | Absent: " + s.getAbsentCount() +
+                        " | Last Date: " + s.getDay() + "/" + s.getMonth() + "/" + s.getYear() + "\n");
+            }
+            writer.close();
+            System.out.println("Readable file saved.");
+        } catch (IOException e) {
+            System.out.println("Error saving readable file: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void loadFromFile() {
+        try {
+            FileReader reader = new FileReader("D:\\attendance.txt");
+            Scanner fileInput = new Scanner(reader);
+            while (fileInput.hasNextLine()) {
+                String[] data = fileInput.nextLine().split(",");
+                if (data.length >= 9) {
+                    Student s = new Student(data[0], Integer.parseInt(data[1]), Integer.parseInt(data[2]));
+                    s.setAttendance(data[3].charAt(0));
+                    for (int i = 0; i < Integer.parseInt(data[4]); i++) s.incrementPresent();
+                    for (int i = 0; i < Integer.parseInt(data[5]); i++) s.incrementAbsent();
+                    s.setDay(Integer.parseInt(data[6]));
+                    s.setMonth(Integer.parseInt(data[7]));
+                    s.setYear(Integer.parseInt(data[8]));
+                    students[totalStudents++] = s;
+                    sections[s.getSection() - 1]++;
+                }
+            }
+            fileInput.close();
+            System.out.println("Data loaded.");
+        } catch (IOException e) {
+            System.out.println("Error loading file: " + e.getMessage());
+        }
+    }
+    public void displayFullFile() {
+        try {
+            FileReader reader = new FileReader("D:\\attendance.txt");
+            Scanner fileInput = new Scanner(reader);
+
+            System.out.println("\n--- File Content ---");
+
+            while (fileInput.hasNextLine()) {
+                System.out.println(fileInput.nextLine());
+            }
+
+            fileInput.close();
+        } catch (IOException e) {
+            System.out.println("Error reading file: " + e.getMessage());
+        }
+    }
+}
+
+
